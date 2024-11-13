@@ -1,7 +1,10 @@
 package org.netprime.service;
 
+import org.netprime.dto.LoginRequest;
 import org.netprime.dto.UserRequest;
 import org.netprime.dto.UserResponse;
+
+import java.util.Map;
 
 public interface UserService {
 
@@ -11,4 +14,5 @@ public interface UserService {
 
     void addRoleToUser(String username, String role);
 
+    Map<String, String> loginUser(LoginRequest loginRequest);
 }
