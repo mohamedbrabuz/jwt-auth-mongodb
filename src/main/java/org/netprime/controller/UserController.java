@@ -1,8 +1,8 @@
 package org.netprime.controller;
 
+import org.netprime.dto.ApiResponse;
 import org.netprime.dto.LoginRequest;
 import org.netprime.dto.UserRequest;
-import org.netprime.dto.UserResponse;
 import org.netprime.exception.RoleException;
 import org.netprime.exception.UserException;
 import org.netprime.service.impl.UserServiceImpl;
@@ -23,9 +23,9 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> registerUser(@RequestBody UserRequest userRequest) {
+    public ResponseEntity<ApiResponse> registerUser(@RequestBody UserRequest userRequest) {
         try{
-            UserResponse userResponse = userService.registerUser(userRequest);
+            ApiResponse userResponse = userService.registerUser(userRequest);
             return new ResponseEntity<>(userResponse, HttpStatus.OK);
         }catch(Exception e){
             throw new UserException(e.getMessage());
@@ -33,9 +33,9 @@ public class UserController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<UserResponse> findUserByUsername(@RequestParam("username") String username) {
+    public ResponseEntity<ApiResponse> findUserByUsername(@RequestParam("username") String username) {
         try{
-            UserResponse userResponse = userService.findUserByUsername(username);
+            ApiResponse userResponse = userService.findUserByUsername(username);
             return new ResponseEntity<>(userResponse, HttpStatus.OK);
         }catch(Exception e){
             throw new UserException(e.getMessage());
