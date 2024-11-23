@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    image: spring-app-1
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb-container:27017/newDatabase
+      SPRING_DATA_REDIS_URL: redis://redis-container:6379
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    external: true

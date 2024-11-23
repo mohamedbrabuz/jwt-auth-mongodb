@@ -1,21 +1,35 @@
 package org.netprime.config;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.netprime.model.Role;
+import jakarta.annotation.PostConstruct;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 @Component
 public class JwtUtil {
 
-    private final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long EXPIRATION_TIME = 3600000; // 1 hour in milliseconds
+    @Value("${jwt.secret}")
+    private String secret;
+
+    // Get token expiration duration
+    // 1 hour in milliseconds
+    @Getter
+    @Value("${jwt.expiration}")
+    private long expiration;
+
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
 
     // Generate a JWT token for a given username
     public String generateToken(String email, Set<String> roles) {
@@ -23,8 +37,8 @@ public class JwtUtil {
                 .setSubject(email)
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -33,24 +47,30 @@ public class JwtUtil {
         try {
             String tokenEmail = getEmailFromToken(token);
             return email.equals(tokenEmail) && !isTokenExpired(token);
-        }catch (Exception e) {
+        }catch (JwtException | IllegalArgumentException e) {
+            System.err.println(e.getMessage());
             return false;
         }
     }
 
     //Check token expiration
     private boolean isTokenExpired(String token) {
-        Date expiration = Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token).getBody().getExpiration();
+        Date expiration = Jwts.parserBuilder().setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
         return expiration.before(new Date());
     }
 
     //Retrieve email from token
     public String getEmailFromToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 
-    // Get token expiration duration
-    public long getExpiration() {
-        return 3600000; // 1 hour in milliseconds
-    }
 }

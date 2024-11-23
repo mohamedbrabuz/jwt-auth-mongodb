@@ -58,19 +58,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ApiResponse registerUser(UserRequest userRequest) {
-        Query queryUsername = new Query();
-        queryUsername.addCriteria(Criteria.where("username").is(userRequest.getUsername()));
-
-        Query queryEmail = new Query();
-        queryEmail.addCriteria(Criteria.where("email").is(userRequest.getEmail()));
         // Check if user with the same username or email exists
-        if (mongoTemplate.exists(queryUsername, User.class)) {
-            throw new RuntimeException("Username already exists");
+        if (isUserExists(userRequest.getUsername(), userRequest.getEmail())) {
+            throw new RuntimeException("Username or E;qil already exists");
         }
-        if (mongoTemplate.exists(queryEmail, User.class)) {
-            throw new RuntimeException("Email already exists");
-        }
-        // End of check
 
         //Create new user instance
         User user = new User();
@@ -80,7 +71,7 @@ public class UserServiceImpl implements UserService {
 
         //Encode the user's password before saving
         user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        User savedUser = userRepository.save(user);
+        userRepository.save(user);
 
         //Return the response
         return new ApiResponse(true, "User has been created");
@@ -101,7 +92,7 @@ public class UserServiceImpl implements UserService {
         extraData.put("username", user.getUsername());
         extraData.put("email", user.getEmail());
         extraData.put("authorities", authorities);
-        return new ApiResponse(true, "User has been created", extraData);
+        return new ApiResponse(true, "User found", extraData);
     }
 
     @Override
@@ -110,7 +101,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserException("User not found"));
         //Find role by its name
         Role role = roleRepository.findByName(roleName).orElseThrow(() -> new RoleException("Role not found"));
-        // Add the role to the user's role set if it's not already there
+        // Add the role to the user's role Set if it's not already there
         if (!user.getRoles().contains(role)) {
             user.getRoles().add(role);
             userRepository.save(user);
@@ -118,13 +109,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Map<String, String> loginUser(LoginRequest loginRequest) {
+    public ApiResponse loginUser(LoginRequest loginRequest) {
         //Redis key for storing the token
         String redisKey = "JWT:" + loginRequest.getEmail();
+
         //Check for an existing token in Redis
         String existingToken = redisTemplate.opsForValue().get(redisKey);
         if (existingToken != null && jwtUtil.validateToken(existingToken, loginRequest.getEmail())) {
-            return response("Token retrieved from cache", existingToken);
+            return new ApiResponse(true, "Token retrieved from cache");
         }
 
         //Authenticate the user
@@ -133,6 +125,8 @@ public class UserServiceImpl implements UserService {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
+
+        // Extract the roles from authenticate user
         Set<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
         //Generate JWT token
@@ -141,14 +135,20 @@ public class UserServiceImpl implements UserService {
         //Store the token in redis
         redisTemplate.opsForValue().set(redisKey, token, jwtUtil.getExpiration(), TimeUnit.MILLISECONDS);
 
-        return response("User logged in successfully" ,token);
+        // Return the response
+        Map<String, Object> extraData = new HashMap<>();
+        extraData.put("token", token);
+        return new ApiResponse(true, "User logged in successfully", extraData);
     }
 
-    private Map<String, String> response(String message, String token){
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "success");
-        response.put("message", message);
-        response.put("token", token);
-        return response;
+
+    // Method to verify if the user exists in the DB
+    private boolean isUserExists(String username, String email) {
+        Query query = new Query();
+        query.addCriteria(new Criteria().orOperator(
+                Criteria.where("username").is(username),
+                Criteria.where("email").is(email)
+        ));
+        return mongoTemplate.exists(query, User.class);
     }
 }

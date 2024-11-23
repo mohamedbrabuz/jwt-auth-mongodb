@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/auth")
 public class UserController {
@@ -22,6 +20,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    // Endpoint to register a new user
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> registerUser(@RequestBody UserRequest userRequest) {
         try{
@@ -32,6 +31,7 @@ public class UserController {
         }
     }
 
+    // Endpoint to find a user by username
     @GetMapping("/users")
     public ResponseEntity<ApiResponse> findUserByUsername(@RequestParam("username") String username) {
         try{
@@ -42,6 +42,7 @@ public class UserController {
         }
     }
 
+    // Endpoint to assign a role to a user
     @PostMapping("/assign-role")
     public ResponseEntity<String> assignRoleToUser(@RequestParam String username, @RequestParam String roleName) {
         try {
@@ -52,11 +53,11 @@ public class UserController {
         }
     }
 
+    // Endpoint for user login
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> loginUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse> loginUser(@RequestBody LoginRequest loginRequest) {
         try{
-            Map<String, String> response = userService.loginUser(loginRequest);
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            return new ResponseEntity<>(userService.loginUser(loginRequest), HttpStatus.OK);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
