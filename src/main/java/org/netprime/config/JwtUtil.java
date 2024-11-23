@@ -12,14 +12,13 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.Set;
+
 @Component
 public class JwtUtil {
 
     @Value("${jwt.secret}")
     private String secret;
 
-    // Get token expiration duration
-    // 1 hour in milliseconds
     @Getter
     @Value("${jwt.expiration}")
     private long expiration;
@@ -28,6 +27,9 @@ public class JwtUtil {
 
     @PostConstruct
     public void init() {
+        if (secret == null || secret.isEmpty()) {
+            throw new IllegalArgumentException("JWT secret cannot be null or empty");
+        }
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
     }
 

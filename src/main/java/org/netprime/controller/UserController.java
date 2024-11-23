@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserServiceImpl userService;
+    private final UserServiceImpl userServiceImpl;
 
-    public UserController(UserServiceImpl userService) {
+    public UserController(UserServiceImpl userService, UserServiceImpl userServiceImpl) {
         this.userService = userService;
+        this.userServiceImpl = userServiceImpl;
     }
 
     // Endpoint to register a new user
@@ -44,10 +46,9 @@ public class UserController {
 
     // Endpoint to assign a role to a user
     @PostMapping("/assign-role")
-    public ResponseEntity<String> assignRoleToUser(@RequestParam String username, @RequestParam String roleName) {
+    public ResponseEntity<ApiResponse> assignRoleToUser(@RequestParam String username, @RequestParam String roleName) {
         try {
-            userService.addRoleToUser(username, roleName);
-            return new ResponseEntity<>("Role assigned", HttpStatus.OK);
+            return new ResponseEntity<>(userService.addRoleToUser(username, roleName), HttpStatus.OK);
         }catch(Exception e){
             throw new RoleException(e.getMessage());
         }
@@ -59,6 +60,16 @@ public class UserController {
         try{
             return new ResponseEntity<>(userService.loginUser(loginRequest), HttpStatus.OK);
         } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    // Endpoint for user logout
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logoutUser(@RequestHeader("Authorization") String token) {
+        try{
+            return new ResponseEntity<>(userServiceImpl.logoutUser(token), HttpStatus.OK);
+        }catch(Exception e){
             throw new RuntimeException(e.getMessage());
         }
     }

@@ -96,7 +96,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void addRoleToUser(String username, String roleName) {
+    public ApiResponse addRoleToUser(String username, String roleName) {
         // Find the user by username
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserException("User not found"));
         //Find role by its name
@@ -105,7 +105,9 @@ public class UserServiceImpl implements UserService {
         if (!user.getRoles().contains(role)) {
             user.getRoles().add(role);
             userRepository.save(user);
+            return new ApiResponse(true, "Role assigned");
         }
+        return new ApiResponse(false, "Role already assigned");
     }
 
     @Override
@@ -139,6 +141,15 @@ public class UserServiceImpl implements UserService {
         Map<String, Object> extraData = new HashMap<>();
         extraData.put("token", token);
         return new ApiResponse(true, "User logged in successfully", extraData);
+    }
+
+    @Override
+    public ApiResponse logoutUser(String token) {
+        // Remove "Bearer " prefix
+        String jwtToken = token.substring(7);
+        String email = "JWT:" + jwtUtil.getEmailFromToken(jwtToken);
+        redisTemplate.delete(email);
+        return new ApiResponse(true, "User logged out");
     }
 
 

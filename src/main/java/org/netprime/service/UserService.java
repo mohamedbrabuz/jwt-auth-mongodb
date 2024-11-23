@@ -10,7 +10,9 @@ public interface UserService {
 
     ApiResponse findUserByUsername(String username);
 
-    void addRoleToUser(String username, String role);
+    ApiResponse addRoleToUser(String username, String role);
 
     ApiResponse loginUser(LoginRequest loginRequest);
+
+    ApiResponse logoutUser(String token);
 }
