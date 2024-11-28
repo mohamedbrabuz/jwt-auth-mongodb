@@ -8,6 +8,7 @@ import org.netprime.exception.UserException;
 import org.netprime.service.impl.UserServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -46,6 +47,7 @@ public class UserController {
 
     // Endpoint to assign a role to a user
     @PostMapping("/assign-role")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> assignRoleToUser(@RequestParam String username, @RequestParam String roleName) {
         try {
             return new ResponseEntity<>(userService.addRoleToUser(username, roleName), HttpStatus.OK);
